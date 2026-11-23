@@ -10,7 +10,12 @@ async function bootstrap() {
 
   app.setGlobalPrefix(prefix);
   app.enableCors({
-    origin: origin ? origin.split(',') : true,
+    origin: origin
+      ? origin
+          .split(',')
+          .map((item) => item.trim())
+          .filter(Boolean)
+      : true,
     credentials: true,
   });
   app.useGlobalPipes(
