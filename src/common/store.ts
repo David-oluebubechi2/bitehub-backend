@@ -13,7 +13,7 @@ import {
 } from './types';
 import { hashPassword, makeId } from './crypto.util';
 
-type ProfileOverride = Pick<User, 'id' | 'email' | 'username' | 'name' | 'phone' | 'avatar'>;
+type ProfileOverride = Partial<User> & Pick<User, 'id'>;
 
 const dataDir = process.env.VERCEL
   ? '/tmp'
@@ -33,14 +33,7 @@ function loadProfileOverrides(): ProfileOverride[] {
 }
 
 function saveProfileOverrides(users: User[]): void {
-  const overrides: ProfileOverride[] = users.map((user) => ({
-    id: user.id,
-    email: user.email,
-    username: user.username,
-    name: user.name,
-    phone: user.phone,
-    avatar: user.avatar,
-  }));
+  const overrides: ProfileOverride[] = users.map((user) => ({ ...user }));
   const directory = path.dirname(profileFile);
   if (!fs.existsSync(directory)) fs.mkdirSync(directory, { recursive: true });
   fs.writeFileSync(profileFile, JSON.stringify(overrides, null, 2), 'utf8');
@@ -233,12 +226,24 @@ export class MemoryStore {
       email: process.env.SEED_ADMIN_EMAIL || 'oluebubechidavid@gmail.com',
       username: process.env.SEED_ADMIN_USERNAME || 'david_oluebubechi',
       passwordHash: hashPassword(process.env.SEED_ADMIN_PASSWORD || 'Midaltouch@2007'),
-      name: 'Alex Morgan',
-      phone: '+1 (555) 010-0001',
-      avatar: 'AM',
+      name: 'David Oluebubechi',
+      phone: '07046059865',
+      avatar: 'DO',
       role: 'ADMIN',
       active: true,
       createdAt: daysAgo(120),
+    },
+    {
+      id: 'user-customer',
+      email: process.env.SEED_CUSTOMER_EMAIL || 'customer@bitehub.test',
+      username: process.env.SEED_CUSTOMER_USERNAME || 'customer',
+      passwordHash: hashPassword(process.env.SEED_CUSTOMER_PASSWORD || 'Customer123!'),
+      name: 'Jamie Customer',
+      phone: '+1 (555) 010-0002',
+      avatar: 'JC',
+      role: 'CUSTOMER',
+      active: true,
+      createdAt: daysAgo(60),
     },
   ];
 
@@ -271,7 +276,13 @@ export class MemoryStore {
   constructor() {
     for (const saved of loadProfileOverrides()) {
       const user = this.users.find((candidate) => candidate.id === saved.id);
-      if (user) Object.assign(user, saved);
+      if (user) {
+        for (const [key, value] of Object.entries(saved)) {
+          if (value !== undefined && key !== 'id') (user as unknown as Record<string, unknown>)[key] = value;
+        }
+      } else if (saved.email && saved.username && saved.passwordHash && saved.role && saved.active !== undefined && saved.createdAt) {
+        this.users.push(saved as User);
+      }
     }
     const savedSupport = loadSupportSettings();
     if (savedSupport) {

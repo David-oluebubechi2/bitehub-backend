@@ -19,7 +19,15 @@ export class AuthService {
 
   private issue(user: User): AuthTokens {
     return {
-      accessToken: this.jwt.sign({ sub: user.id, role: user.role }),
+      accessToken: this.jwt.sign({
+        sub: user.id,
+        role: user.role,
+        username: user.username,
+        email: user.email,
+        name: user.name,
+        avatar: user.avatar,
+        phone: user.phone,
+      }),
       user: toPublicUser(user),
     };
   }
@@ -61,6 +69,7 @@ export class AuthService {
       read: false,
       createdAt: this.store.now(),
     });
+    this.store.persistProfiles();
     return this.issue(user);
   }
 
@@ -80,6 +89,7 @@ export class AuthService {
   }
 
   updateProfile(user: User, dto: UpdateProfileDto): AuthTokens['user'] {
+    if (!this.store.users.some((candidate) => candidate.id === user.id)) this.store.users.push(user);
     if (dto.username !== undefined) {
       const username = this.normalizeUsername(dto.username);
       if (!username) throw new BadRequestException('Username is required');

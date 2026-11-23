@@ -77,6 +77,7 @@ export class AdminService {
       if (adminCount <= 1) throw new ForbiddenException('At least one admin must remain');
     }
     user.role = role;
+    this.store.persistProfiles();
     const { passwordHash, ...safe } = user;
     return safe;
   }
@@ -85,6 +86,7 @@ export class AdminService {
     const user = this.store.users.find((u) => u.id === id);
     if (!user) throw new NotFoundException('User not found');
     user.active = active;
+    this.store.persistProfiles();
     const { passwordHash, ...safe } = user;
     return safe;
   }
